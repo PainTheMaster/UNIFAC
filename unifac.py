@@ -5,6 +5,12 @@ from typing import NamedTuple
 data_gr:list[Group] = [None]*51
 
 
+def reset_gr():
+    for gr in data_gr:
+        if gr is not None:
+            gr.X = 0
+            gr.Theta = 0
+
 class Group:
     def __init__(self,
                  id:int=None,
@@ -23,6 +29,8 @@ class Group:
         self.Rk:list[float]=Rk if Rk is not None else []
         self.Qk:list[float]=Qk if Qk is not None else []
         self.a_mn:list[float]=a_mn if a_mn is not None else []
+        self.X:float = 0
+        self.Theta:float = 0
 
     def set_gr(self, gr:str):
         if gr is not None:
@@ -94,7 +102,7 @@ class Group:
 
         self.a_mn[id_sub_gr] = single_a_mn
 
-    def get_Rk(self, id_sub_gr:int=None, name_sub_gr:str=None)->float:
+    def get_R(self, id_sub_gr:int=None, name_sub_gr:str=None)->float:
         if id_sub_gr is not None and name_sub_gr is not None:
             if self.sub_gr[id_sub_gr] != name_sub_gr:
                 raise ValueError(f'get_Rk(): Group "{self.gr}". Inconsistent sub group ID "{id_sub_gr}" and sub group name "{name_sub_gr}".')
@@ -107,7 +115,7 @@ class Group:
         else:
             raise ValueError('Both "id_sub_gr" and "name_sub_gr" are not given.')
 
-    def get_Qk(self, id_sub_gr:int=None, name_sub_gr:str=None)->float:
+    def get_Q(self, id_sub_gr:int=None, name_sub_gr:str=None)->float:
         """
         Do something.
         """
@@ -124,7 +132,7 @@ class Group:
             raise ValueError('Both "id_sub_gr" and "name_sub_gr" are not given.')
 
 
-class Composition:
+class GrComposition:
     def __init__(self, gr_main: int, gr_sub: int, num_gr: int):
         self.id_gr_main:int = gr_main
         self.id_gr_sub:int = gr_sub
@@ -132,13 +140,14 @@ class Composition:
         
 
 class Solvent:
-    def __init__(self, list_gr:list[Composition]=None):
-        self.list_gr:list[Composition] = list_gr if list_gr is not None else []
-        self.rk:float = None
-        self.qk:float = None
+    def __init__(self, list_gr:list[GrComposition]=None):
+        self.list_gr:list[GrComposition] = list_gr if list_gr is not None else []
+        self.r:float = None
+        self.q:float = None
+        self.Theta:float = None
 
     def add_composition(self, gr_main:int, gr_sub: int, num_gr:int):
-        new_gr = Composition(gr_main=gr_main, gr_sub=gr_sub, num_gr=num_gr)
+        new_gr = GrComposition(gr_main=gr_main, gr_sub=gr_sub, num_gr=num_gr)
         self.list_gr.append(new_gr)
 
     def calc_inherent_params(self):
@@ -148,14 +157,45 @@ class Solvent:
             id_main_gr_this = gr.id_gr_main
             id_sub_gr_this = gr.id_gr_sub
             num_gr_this = gr.num_gr
-            R = data_gr[id_main_gr_this].get_Rk(id_sub_gr_this)
+
+            R = data_gr[id_main_gr_this].get_R(id_sub_gr_this)
             temp_r += R*num_gr_this
 
-            Q = data_gr[id_main_gr_this].get_Qk(id_sub_gr_this)
+            Q = data_gr[id_main_gr_this].get_Q(id_sub_gr_this)
             temp_q += Q*num_gr_this
 
-        self.rk = temp_r
-        self.qk = temp_q
+        self.r = temp_r
+        self.q = temp_q
+
+    def calc_gamma_self(self, temp:float):
+        for gr_piv in self.list_gr:
+            id_main_piv:int = gr_piv.id_gr_main
+            id_sub_piv:int = gr_piv.id_gr_sub
+            for gr_cyc in self.list_gr:
+                if gr_cyc != gr_piv:
+                    id_main_cyc = gr_cyc.id_gr_main
+                    
+
+
+
+
+
+
+class System:
+    def __init__(self, list_solv:list[Solvent]=None, solv_composition:list[float]=None):
+        self.list_solv = list_solv if list_solv is not None else []
+        self.solv_composition = solv_composition if solv_composition is not None else []
+
+        if len(list_solv) != len(solv_composition):
+            raise RuntimeError(f'System.__init__(): Length mismatched. len(list_solv)=={len(list_solv)}, len(solv_composition)=={len(solv_composition)}')
+
+    
+        
+
+
+        
+
+
 
 
 
